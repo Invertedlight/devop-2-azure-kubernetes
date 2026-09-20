@@ -10,18 +10,18 @@ terraform {
 
 provider "azurerm" {
   features {}
-  subscription_id = "c9f99369-d202-458b-9a97-4c95a5cbc20c"
+  subscription_id = "be6994fd-99cd-4fae-9caa-9f2693b3db0e"
 }
 
 # Resource Group
 resource "azurerm_resource_group" "main" {
   name     = "rg-terraform-demo"
-  location = "westeurope"
+  location = "westus2"
 }
 
 resource "azurerm_resource_group" "demo_state" {
   name     = "rg-state-demo"
-  location = "westeurope"
+  location = "westus2"
 }
 
 # Virtual Network
@@ -92,15 +92,15 @@ resource "azurerm_linux_virtual_machine" "main" {
   name                = "vm-demo"
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
-  size                = "Standard_B2s"
-  admin_username      = "azureuser"
+  size                = "Standard_D2alds_v6"
+  admin_username      = "vscode"
 
   network_interface_ids = [
     azurerm_network_interface.main.id,
   ]
 
   admin_ssh_key {
-    username   = "azureuser"
+    username   = "vscode"
     public_key = file("~/.ssh/mercury.pub")
   }
 
