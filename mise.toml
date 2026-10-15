@@ -10,3 +10,4 @@ kubens = "latest"
 neovim = "latest"
 python = "latest"
 terraform = "latest"
+usage = { version = "7.0.1", workflow = "publish-cli.yml" }
