@@ -8,10 +8,10 @@ spec:
   ingressClassName: traefik-traefik
   tls:
     - hosts:
-        - customer1.mercury.invertedlight.org
+        - customer1.mercury.jameshomelab.org
       secretName: customer1-tls
   rules:
-    - host: customer1.mercury.invertedlight.org
+    - host: customer1.mercury.jameshomelab.org
       http:
         paths:
           - path: /
