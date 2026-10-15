@@ -5,12 +5,25 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "=5.0.0"
     }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 2.17"
+    }
   }
 }
 
 provider "azurerm" {
   features {}
   subscription_id = "be6994fd-99cd-4fae-9caa-9f2693b3db0e"
+}
+
+provider "helm" {
+  kubernetes {
+    host                   = azurerm_kubernetes_cluster.main.kube_config[0].host
+    client_certificate     = base64decode(azurerm_kubernetes_cluster.main.kube_config[0].client_certificate)
+    client_key             = base64decode(azurerm_kubernetes_cluster.main.kube_config[0].client_key)
+    cluster_ca_certificate = base64decode(azurerm_kubernetes_cluster.main.kube_config[0].cluster_ca_certificate)
+  }
 }
 
 resource "azurerm_resource_group" "aks" {
@@ -24,6 +37,7 @@ resource "azurerm_kubernetes_cluster" "main" {
   resource_group_name = azurerm_resource_group.aks.name
   dns_prefix          = "mercury"
   kubernetes_version  = "1.35.0"
+
   node_provisioning_profile {
     mode = "Manual"
   }
@@ -43,58 +57,52 @@ resource "azurerm_kubernetes_cluster" "main" {
     network_policy     = "cilium"
     network_data_plane = "cilium"
   }
-
 }
 
-# DB
-#
-# resource "azurerm_postgresql_flexible_server" "n8n_db" {
-#
-#   name                = "psql-n8n-mercury"
-#   resource_group_name = azurerm_resource_group.aks.name
-#   location            = azurerm_resource_group.aks.location
-#   zone                = "2"
-#
-#   administrator_login    = "n8nadmin"
-#   administrator_password = "n8n-password-123"
-#
-#   sku_name   = "B_Standard_B1ms"
-#   storage_mb = 32768
-#   version    = "16"
-#
-#   backup_retention_days = 7
-#
-#   # Allow Azure services to access (needed for AKS)
-#   public_network_access_enabled = true
-# }
-#
-# resource "azurerm_postgresql_flexible_server_configuration" "disable_ssl" {
-#   name      = "require_secure_transport"
-#   server_id = azurerm_postgresql_flexible_server.n8n_db.id
-#   value     = "OFF"
-# }
-#
-# resource "azurerm_postgresql_flexible_server_database" "n8n" {
-#   name      = "n8n"
-#   server_id = azurerm_postgresql_flexible_server.n8n_db.id
-# }
-#
-# resource "azurerm_postgresql_flexible_server_firewall_rule" "allow_azure_services" {
-#   name             = "AllowAzureServices"
-#   server_id        = azurerm_postgresql_flexible_server.n8n_db.id
-#   start_ip_address = "0.0.0.0"
-#   end_ip_address   = "0.0.0.0"
-# }
-#
-# output "db_host" {
-#   value = azurerm_postgresql_flexible_server.n8n_db.fqdn
-# }
-#
-# output "db_name" {
-#   value = azurerm_postgresql_flexible_server_database.n8n.name
-# }
-#
-# output "db_user" {
-#   value = azurerm_postgresql_flexible_server.n8n_db.administrator_login
-# }
+# In-cluster Postgres (Flexible Server is not available on this subscription)
+resource "helm_release" "n8n_pg" {
+  name             = "n8n-pg"
+  repository       = "oci://registry-1.docker.io/bitnamicharts"
+  chart            = "postgresql"
+  namespace        = "n8n"
+  create_namespace = true
+  timeout          = 600
 
+  set {
+    name  = "auth.username"
+    value = "n8nadmin"
+  }
+
+  set_sensitive {
+    name  = "auth.password"
+    value = "N8n-P@ssw0rd"
+  }
+
+  set {
+    name  = "auth.database"
+    value = "n8n"
+  }
+
+  set {
+    name  = "primary.persistence.size"
+    value = "8Gi"
+  }
+
+  depends_on = [azurerm_kubernetes_cluster.main]
+}
+
+output "db_host" {
+  value = "n8n-pg-postgresql.n8n.svc.cluster.local"
+}
+
+output "db_port" {
+  value = 5432
+}
+
+output "db_name" {
+  value = "n8n"
+}
+
+output "db_user" {
+  value = "n8nadmin"
+}
