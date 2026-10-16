@@ -44,3 +44,4 @@ terraform.rc
 # planout
 admin/deploy_key
 admin/deploy_key_gitops
+phase-5-gitops/mercury-gitops/
