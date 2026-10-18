@@ -7,3 +7,12 @@ curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 curl -sSfL \
   https://github.com/cloudnative-pg/cloudnative-pg/raw/main/hack/install-cnpg-plugin.sh |
   sudo sh -s -- -b /usr/local/bin
+
+# Flux deploy key for mercury-gitops (Terraform reads ~/.ssh/mercury).
+# The key lives on the persistent workspace volume; only the link is recreated.
+KEY_DIR="/workspaces/$DEVPOD_WORKSPACE_ID/.keys"
+if [ -f "$KEY_DIR/mercury" ]; then
+  mkdir -p "$HOME/.ssh" && chmod 700 "$HOME/.ssh"
+  ln -sf "$KEY_DIR/mercury" "$HOME/.ssh/mercury"
+  ln -sf "$KEY_DIR/mercury.pub" "$HOME/.ssh/mercury.pub"
+fi
