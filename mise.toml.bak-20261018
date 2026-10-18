@@ -1,0 +1,14 @@
+[tools]
+chezmoi = "latest"
+flux2 = "latest"
+gh = "latest"
+helm = "latest"
+k9s = "latest"
+kubectl = "latest"
+kubectx = "latest"
+kubelogin = "latest"
+kubens = "latest"
+neovim = "latest"
+python = "latest"
+terraform = "latest"
+usage = { version = "7.0.1", workflow = "publish-cli.yml" }
