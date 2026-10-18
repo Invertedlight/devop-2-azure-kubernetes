@@ -16,3 +16,15 @@ if [ -f "$KEY_DIR/mercury" ]; then
   ln -sf "$KEY_DIR/mercury" "$HOME/.ssh/mercury"
   ln -sf "$KEY_DIR/mercury.pub" "$HOME/.ssh/mercury.pub"
 fi
+
+# Dotfiles and zsh login shell. The home folder starts fresh whenever the pod
+# is recreated, so re-apply James's chezmoi dotfiles and set zsh as the shell.
+if command -v chezmoi >/dev/null 2>&1 && [ ! -d "$HOME/.local/share/chezmoi/.git" ]; then
+  if [ -e "$HOME/.local/share/chezmoi" ]; then
+    mv "$HOME/.local/share/chezmoi" "$HOME/.local/share/chezmoi.old-$(date +%Y%m%d%H%M%S)"
+  fi
+  chezmoi init --apply https://github.com/Invertedlight/dotfiles.git
+fi
+if [ -x /usr/bin/zsh ] && ! grep -q "^$(id -un):.*:/usr/bin/zsh$" /etc/passwd; then
+  sudo chsh -s /usr/bin/zsh "$(id -un)"
+fi
