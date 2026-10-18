@@ -19,3 +19,8 @@ output "storage_account_name" {
   value       = azurerm_storage_account.cnpg_backups.name
   description = "Storage account for CNPG backups"
 }
+
+output "customer1_backup_path" {
+  value       = "${azurerm_storage_account.cnpg_backups.primary_blob_endpoint}customer1"
+  description = "CNPG backup destination path for customer1"
+}

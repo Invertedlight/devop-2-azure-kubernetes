@@ -9,24 +9,24 @@ patches:
     patch: |-
       - op: replace
         path: /spec/parameters/userAssignedIdentityID
-        value: "10ebab78-f6c8-4d5e-ac64-c0d85fb031d0"
+        value: "c9b1bfad-34e1-47bd-a096-2ae21da2c9ca"
       - op: replace
         path: /spec/parameters/tenantId
-        value: "6c0d1498-a808-4d41-a865-fdebeb412738"
+        value: "56064b81-ec30-4395-bb27-af9877c941dc"
   - target:
       kind: ObjectStore
       name: customer1-objectstore
     patch: |-
       - op: replace
         path: /spec/configuration/destinationPath
-        value: "https://mercurybackupsstaging.blob.core.windows.net/customer1"
+        value: "https://mercurybackupsjrich.blob.core.windows.net/customer1"
   - target:
       kind: Ingress
       name: customer1-ingress
     patch: |-
       - op: replace
         path: /spec/tls/0/hosts/0
-        value: "customer1.mercury-staging.kubecraftlabs.com"
+        value: "customer1-mercury.jameshomelab.org"
       - op: replace
         path: /spec/rules/0/host
-        value: "customer1.mercury-staging.kubecraftlabs.com"
+        value: "customer1-mercury.jameshomelab.org"
