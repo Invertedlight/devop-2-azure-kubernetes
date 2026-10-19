@@ -56,8 +56,8 @@ This phase adds end-to-end application monitoring with Telegram notifications.
 ```bash
 # Set variables
 KEY_VAULT_NAME="kv-mercury-stg-qtqi6p"
-BOT_TOKEN="<your-bot-token>"  # From BotFather
-CHAT_ID="<your-chat-id>"  # From getUpdates (use quotes for negative numbers)
+BOT_TOKEN="Add your telegram token"  # From BotFather
+CHAT_ID="Add your telegram chat ID"  # From getUpdates (use quotes for negative numbers)
 
 # Add Telegram bot token
 az keyvault secret set \
