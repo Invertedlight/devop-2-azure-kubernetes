@@ -9,7 +9,7 @@ patches:
     patch: |-
       - op: replace
         path: /spec/parameters/userAssignedIdentityID
-        value: "ecb7445e-ae52-4684-8053-74ee9818fd4d" # TODO: update from phase-7 terraform output aks_keyvault_secrets_provider_client_id after apply
+        value: "ab0c14b9-8da1-41e8-b735-61cf562e56cf" # TODO: update from phase-7 terraform output aks_keyvault_secrets_provider_client_id after apply
       - op: replace
         path: /spec/parameters/tenantId
         value: "56064b81-ec30-4395-bb27-af9877c941dc"
