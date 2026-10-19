@@ -1,0 +1,17 @@
+# CNPG cluster metrics (cnpg_* series used by the database alerts).
+# Mischa's Phase-9 alerts expect these metrics, but the Cluster has no PodMonitor;
+# CNPG 1.26+ deprecates spec.monitoring.enablePodMonitor, so define it explicitly.
+# Lives here (not in apps/) because the PodMonitor CRD comes from kube-prometheus-stack,
+# and monitoring-configs depends on monitoring-controllers.
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: customer1-db
+  namespace: customer1
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/cluster: customer1-db
+      cnpg.io/podRole: instance
+  podMetricsEndpoints:
+    - port: metrics

@@ -1,0 +1,39 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: ${customer_name}-db
+spec:
+  instances: ${db_instances}
+
+  bootstrap:
+    initdb:
+      database: app
+      owner: app
+      secret:
+        name: ${customer_name}-db-credentials
+
+  # Point-in-Time Recovery (PITR) - uncomment to restore from backup
+  # bootstrap:
+  #   recovery:
+  #     database: app
+  #     owner: app
+  #     source: source
+  #     secret:
+  #       name: ${customer_name}-db-credentials
+  #
+  # externalClusters:
+  #   - name: source
+  #     plugin:
+  #       name: barman-cloud.cloudnative-pg.io
+  #       parameters:
+  #         barmanObjectName: ${customer_name}-objectstore
+  #         serverName: ${customer_name}-db
+
+  storage:
+    size: ${db_storage_size}
+
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: ${customer_name}-objectstore

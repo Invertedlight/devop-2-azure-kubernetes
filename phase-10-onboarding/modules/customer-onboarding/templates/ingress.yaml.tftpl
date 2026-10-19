@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ${customer_name}-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: ${ingress_class}
+  tls:
+    - hosts:
+        - ${hostname}
+      secretName: ${customer_name}-tls
+  rules:
+    - host: ${hostname}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ${customer_name}-n8n
+                port:
+                  number: 3008

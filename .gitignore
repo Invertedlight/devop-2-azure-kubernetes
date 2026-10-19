@@ -45,3 +45,7 @@ terraform.rc
 admin/deploy_key
 admin/deploy_key_gitops
 phase-5-gitops/mercury-gitops/
+
+# Saved terraform plan files
+tfplan
+*.tfplan

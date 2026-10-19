@@ -1,5 +1,15 @@
 # Phase 9: Monitoring & Alerting
 
+> **James's setup (adapted 2026-10-19):** mercury-staging in rg-cloud-course-aks (westus2),
+> Key Vault `kv-mercury-stg-qtqi6p`, secrets-provider identity `ab0c14b9-8da1-41e8-b735-61cf562e56cf`,
+> GitOps repo `Invertedlight/mercury-gitops` (branch `phase-9-monitoring` until merged),
+> Grafana at `https://grafana-mercury.jameshomelab.org` (Cloudflare DNS -> Traefik LB IP).
+> The original course material is kept in `../.phase-9-orig-20261019/`.
+> Differences from the original: Telegram chat ID comes from Key Vault, AKS-managed control-plane
+> scrape targets are disabled, a PodMonitor for `customer1-db` is added (needed for the `cnpg_*`
+> database alerts), and the `monitoring` namespace is PSS `privileged` (node-exporter) while
+> customer namespaces stay `restricted`.
+
 This phase adds end-to-end application monitoring with Telegram notifications.
 
 ## Overview
@@ -45,7 +55,7 @@ This phase adds end-to-end application monitoring with Telegram notifications.
 
 ```bash
 # Set variables
-KEY_VAULT_NAME="kv-mercury-staging"
+KEY_VAULT_NAME="kv-mercury-stg-qtqi6p"
 BOT_TOKEN="Add your telegram token"  # From BotFather
 CHAT_ID="Add your telegram chat ID"  # From getUpdates (use quotes for negative numbers)
 
@@ -70,9 +80,13 @@ az keyvault secret list --vault-name "$KEY_VAULT_NAME" -o table
 ### 1. Apply Terraform Changes
 
 ```bash
-cd /workspaces/mercury-workflows/phase-9-monitoring
+# James's Terraform state lives in phase-7-aks-hardening (local state).
+# Carry it over so Terraform updates the existing cluster instead of creating a new one.
+cd /workspaces/devops2/phase-9-monitoring
+cp ../phase-7-aks-hardening/terraform.tfstate .
 terraform init
-terraform apply
+terraform plan -out=tfplan   # expect: 3 to add (grafana password + 2 KV secrets), 1 to change (flux config), 0 to destroy
+terraform apply tfplan
 ```
 
 This adds two new Flux kustomizations:
@@ -100,7 +114,7 @@ Access grafana through your configured domain
 terraform output -raw grafana_admin_password
 
 # Or retrieve from Key Vault directly
-az keyvault secret show --vault-name kv-mercury-staging --name grafana-admin-password --query value -o tsv
+az keyvault secret show --vault-name kv-mercury-stg-qtqi6p --name grafana-admin-password --query value -o tsv
 ```
 
 ## Testing Alerts
@@ -146,7 +160,7 @@ k -n cnpg-system scale deployment cnpg-system-cnpg-cloudnative-pg --replicas=1
 
 ```bash
 # Delete the primary database pod (it will be recreated)
-kubectl delete pod customer1-db2-1 -n customer1
+kubectl delete pod customer1-db-1 -n customer1
 
 # Watch for replication alerts during failover
 kubectl get pods -n customer1 -w
@@ -158,7 +172,7 @@ kubectl get pods -n customer1 -w
 
 ```bash
 # Connect to database
-kubectl exec -it customer1-db2-1 -n customer1 -- psql -U postgres -d app
+kubectl exec -it customer1-db-1 -n customer1 -- psql -U postgres -d app
 
 # Start a transaction and leave it open
 BEGIN;

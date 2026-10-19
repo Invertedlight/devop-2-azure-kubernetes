@@ -44,13 +44,30 @@ variable "storage_account_primary_connection_string" {
 variable "gitops_repo_path" {
   type        = string
   description = "Local path to GitOps repository"
-  default     = "/workspaces/mercury-gitops"
+  default     = "/workspaces/devops2/phase-5-gitops/mercury-gitops"
 }
 
 variable "domain" {
   type        = string
-  description = "Base domain for ingress (customer will be subdomain)"
-  # No default - must be set per environment (e.g., mercury-staging.kubecraftlabs.com)
+  description = "Base DNS zone; hostname is <customer>-<host_label>.<domain>"
+  default     = "jameshomelab.org"
+}
+
+variable "host_label" {
+  type        = string
+  description = "Environment label in the hostname (mercury for staging, mercury-prod for production)"
+}
+
+variable "ingress_class" {
+  type        = string
+  description = "IngressClass of the Traefik controller"
+  default     = "traefik-traefik"
+}
+
+variable "telegram_chat_id" {
+  type        = string
+  description = "Initial value for the per-customer Telegram chat ID secret"
+  default     = "8801372220"
 }
 
 ## Sizing Variables (with sensible defaults)

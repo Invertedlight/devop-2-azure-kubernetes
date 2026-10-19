@@ -16,40 +16,54 @@ terraform {
   }
 }
 
+
+resource "random_string" "kv_suffix" {
+  length  = 6
+  special = false
+  upper   = false
+}
+
 provider "azurerm" {
   features {}
-  subscription_id = "c9f99369-d202-458b-9a97-4c95a5cbc20c"
+  subscription_id = "be6994fd-99cd-4fae-9caa-9f2693b3db0e"
 }
 
 resource "azurerm_resource_group" "aks" {
   name     = "rg-cloud-course-aks-prod"
-  location = "North Europe"
+  location = "westus2"
 }
 
-## AKS Cluster - Production
+## AKS Cluster with Best Practices
+# Reference: https://learn.microsoft.com/en-us/azure/aks/best-practices
 
 resource "azurerm_kubernetes_cluster" "main" {
   name                = "mercury-production"
   location            = azurerm_resource_group.aks.location
   resource_group_name = azurerm_resource_group.aks.name
   dns_prefix          = "production"
-  kubernetes_version  = "1.32.1"
+  kubernetes_version  = "1.36.3"
+  oidc_issuer_enabled = true
 
   azure_active_directory_role_based_access_control {
-    admin_group_object_ids = ["6c2aab3d-abfe-4b6a-90e2-d76433d03eb6"]
+    admin_group_object_ids = ["9cd83f2d-0124-40c7-86dc-533f78820796"]
   }
 
+  # Automatic upgrades,  patch level only for stability
   automatic_upgrade_channel = "patch"
-  node_os_upgrade_channel   = "NodeImage"
 
+  # Node OS auto-upgrade for security patches
+  node_os_upgrade_channel = "NodeImage"
+
+  # System node pool for critical Kubernetes components
+  # Tainted with CriticalAddonsOnly so user workloads don't schedule here
   default_node_pool {
     name                         = "agentpool"
     node_count                   = 2
-    vm_size                      = "Standard_D2s_v3"
-    only_critical_addons_enabled = true
+    vm_size                      = "Standard_D2s_v6"
+    only_critical_addons_enabled = true # Adds CriticalAddonsOnly taint
 
     upgrade_settings {
-      max_surge = "33%"
+      max_surge = "33%" # Microsoft recommended for production
     }
   }
 
@@ -67,7 +81,8 @@ resource "azurerm_kubernetes_cluster" "main" {
     secret_rotation_enabled = false
   }
 
-  # Maintenance windows - Sunday early morning
+  # Maintenance windows - schedule upgrades during low-traffic periods
+  # Microsoft recommends at least 4 hours duration
   maintenance_window_auto_upgrade {
     frequency   = "Weekly"
     interval    = 1
@@ -87,13 +102,13 @@ resource "azurerm_kubernetes_cluster" "main" {
   }
 }
 
-# User node pool
-# 4 nodes needed for 3 customers with 3 DB replicas each (Standard_D2s_v3 = 4 disks max per node)
+# User node pool - for application workloads
+# No taint, so pods schedule here by default
 resource "azurerm_kubernetes_cluster_node_pool" "user" {
   name                  = "userpool"
   kubernetes_cluster_id = azurerm_kubernetes_cluster.main.id
-  vm_size               = "Standard_D2s_v3"
-  node_count            = 4
+  vm_size               = "Standard_D2s_v6"
+  node_count            = 2
 
   upgrade_settings {
     max_surge = "33%"
@@ -101,12 +116,15 @@ resource "azurerm_kubernetes_cluster_node_pool" "user" {
 }
 
 ## GitOps with Flux
+# IMPORTANT: Register provider first: az provider register --namespace Microsoft.KubernetesConfiguration
 
 resource "azurerm_kubernetes_cluster_extension" "flux" {
   name           = "mercury-flux"
   cluster_id     = azurerm_kubernetes_cluster.main.id
   extension_type = "microsoft.flux"
 
+  # Wait for user node pool to be ready before installing extensions
+  # The system pool has CriticalAddonsOnly taint, so Flux needs user nodes
   depends_on = [azurerm_kubernetes_cluster_node_pool.user]
 }
 
@@ -116,14 +134,13 @@ resource "azurerm_kubernetes_flux_configuration" "main" {
   namespace  = "flux-system"
 
   git_repository {
-    url             = "ssh://git@github.com/mischavandenburg/mercury-gitops"
+    url             = "ssh://git@github.com/Invertedlight/mercury-gitops"
     reference_type  = "branch"
     reference_value = "main"
 
     ssh_private_key_base64 = base64encode(file("~/.ssh/mercury"))
   }
 
-  # Production uses production paths in GitOps repo
   kustomizations {
     name                       = "infra-controllers"
     path                       = "./infrastructure/controllers/production"
@@ -139,21 +156,12 @@ resource "azurerm_kubernetes_flux_configuration" "main" {
     garbage_collection_enabled = true
   }
 
-  # CNPG plugin needs cert-manager (in infra-configs) to be ready
-  # Apps depend on this plugin for database backups
-  kustomizations {
-    name                       = "cnpg-plugin"
-    path                       = "./infrastructure/cnpg-plugin/production"
-    sync_interval_in_seconds   = 300
-    depends_on                 = ["infra-configs"]
-    garbage_collection_enabled = true
-  }
-
+  # Phase 9: Monitoring kustomizations
   kustomizations {
     name                       = "monitoring-controllers"
     path                       = "./monitoring/controllers/production"
     sync_interval_in_seconds   = 300
-    depends_on                 = ["apps"]
+    depends_on                 = ["infra-controllers"]
     garbage_collection_enabled = true
   }
 
@@ -169,7 +177,7 @@ resource "azurerm_kubernetes_flux_configuration" "main" {
     name                       = "apps"
     path                       = "./apps/production"
     sync_interval_in_seconds   = 300
-    depends_on                 = ["cnpg-plugin"]
+    depends_on                 = ["infra-configs"]
     garbage_collection_enabled = true
   }
 
@@ -183,7 +191,7 @@ resource "azurerm_kubernetes_flux_configuration" "main" {
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_key_vault" "mercury_vault" {
-  name                = "kv-mercury-prod"
+  name                = "kv-mercury-prd-${random_string.kv_suffix.result}"
   location            = azurerm_resource_group.aks.location
   resource_group_name = azurerm_resource_group.aks.name
   tenant_id           = data.azurerm_client_config.current.tenant_id
@@ -208,7 +216,7 @@ resource "azurerm_role_assignment" "aks_keyvault_secrets_provider" {
   principal_id         = azurerm_kubernetes_cluster.main.key_vault_secrets_provider[0].secret_identity[0].object_id
 }
 
-## Grafana admin password
+## Grafana admin password (Phase 9)
 
 resource "random_password" "grafana_admin" {
   length  = 24
@@ -235,11 +243,12 @@ resource "azurerm_key_vault_secret" "grafana_admin_user" {
   depends_on = [azurerm_role_assignment.kv_admin]
 }
 
-## Grafana Telegram credentials (dummy values for demo)
+## Grafana Telegram credentials (production vault is new, so Terraform seeds them).
+# Set the real bot token afterwards with az keyvault secret set; value changes are ignored.
 
 resource "azurerm_key_vault_secret" "grafana_telegram_bot_token" {
   name         = "grafana-telegram-bot-token"
-  value        = "DEMO:dummy-bot-token-replace-me"
+  value        = "Add your telegram token"
   key_vault_id = azurerm_key_vault.mercury_vault.id
 
   lifecycle {
@@ -251,22 +260,12 @@ resource "azurerm_key_vault_secret" "grafana_telegram_bot_token" {
 
 resource "azurerm_key_vault_secret" "grafana_telegram_chat_id" {
   name         = "grafana-telegram-chat-id"
-  value        = "000000000"
+  value        = "8801372220"
   key_vault_id = azurerm_key_vault.mercury_vault.id
 
   lifecycle {
     ignore_changes = [value]
   }
-
-  depends_on = [azurerm_role_assignment.kv_admin]
-}
-
-## Storage account name in Key Vault
-
-resource "azurerm_key_vault_secret" "storage_account_name" {
-  name         = "storage-account-name"
-  value        = azurerm_storage_account.cnpg_backups.name
-  key_vault_id = azurerm_key_vault.mercury_vault.id
 
   depends_on = [azurerm_role_assignment.kv_admin]
 }

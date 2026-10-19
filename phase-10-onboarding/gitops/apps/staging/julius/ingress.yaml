@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: julius-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik-traefik
+  tls:
+    - hosts:
+        - julius-mercury.jameshomelab.org
+      secretName: julius-tls
+  rules:
+    - host: julius-mercury.jameshomelab.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: julius-n8n
+                port:
+                  number: 3008
