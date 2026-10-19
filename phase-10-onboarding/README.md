@@ -1,5 +1,20 @@
 # Phase 10: Customer Onboarding
 
+> **James's setup (adapted 2026-10-19).** Original course material: `../.phase-10-orig-20261019/`.
+> - `staging/` manages the existing mercury-staging cluster (rg-cloud-course-aks, kv-mercury-stg-qtqi6p,
+>   storage mercurybackupsjrich). It continues the Phase 9 state: copy `../phase-9-monitoring/terraform.tfstate` in first.
+>   `customer1` is in the customer list and its existing Key Vault secrets, DB password and backup container
+>   are adopted with `moved` blocks (no destroy/recreate). New example customer: `julius`.
+> - Hostnames are single-level for Cloudflare's `*.jameshomelab.org` certificate:
+>   `<customer>-mercury.jameshomelab.org` (staging), `<customer>-mercury-prod.jameshomelab.org` (production).
+> - Manifests are rendered from `modules/customer-onboarding/templates/*.tftpl` into
+>   `/workspaces/devops2/phase-5-gitops/mercury-gitops` (whatever branch is checked out there); commit and push them after apply.
+> - Kept from earlier phases: ingress class `traefik-traefik`, barman plugin under infra-controllers
+>   (no separate cnpg-plugin kustomization), ScheduledBackup `method: plugin`, PSS restricted customer namespaces,
+>   CiliumNetworkPolicy per customer, one PodMonitor per customer DB in `monitoring/configs/<env>/cnpg-podmonitors.yaml`.
+> - `production/` is an optional second AKS cluster (rg-cloud-course-aks-prod, 2 system + 2 user D2s_v6 nodes); it is new
+>   infrastructure with its own cost. Its Grafana SecretProviderClass values in mercury-gitops are placeholders until it exists.
+
 This phase combines customer onboarding with multi-environment support into a single module that provisions complete customer infrastructure with one Terraform command.
 
 ## What This Phase Creates
@@ -108,13 +123,13 @@ To use real Telegram credentials:
 
    ```bash
    # Update the secret values directly in Key Vault
-   az keyvault secret set --vault-name kv-mercury-staging \
+   az keyvault secret set --vault-name kv-mercury-stg-qtqi6p \
      --name julius-telegram-bot-token \
-     --value "YOUR_REAL_BOT_TOKEN"
+     --value "Add your telegram token"
 
-   az keyvault secret set --vault-name kv-mercury-staging \
+   az keyvault secret set --vault-name kv-mercury-stg-qtqi6p \
      --name julius-telegram-chat-id \
-     --value "YOUR_REAL_CHAT_ID"
+     --value "Add your telegram chat ID"
    ```
 
    The `lifecycle { ignore_changes = [value] }` block prevents Terraform from overwriting your real credentials on subsequent applies.
@@ -143,7 +158,7 @@ IMPORTANT: Update the AKS identity in GitOps SecretProviderClasses!
 If you recreated the AKS cluster, update this identity ID in:
 - monitoring/controllers/staging/kube-prometheus-stack/kustomization.yaml
 
-Current AKS identity: 0790a248-1ece-4f6e-972b-53f8d6cbc108
+Current AKS identity: ab0c14b9-8da1-41e8-b735-61cf562e56cf
 EOT
 ```
 

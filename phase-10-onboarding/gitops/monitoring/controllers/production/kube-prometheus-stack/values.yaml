@@ -2,6 +2,17 @@
 alertmanager:
   enabled: false
 
+# AKS: control plane is managed and the Cilium dataplane replaces kube-proxy,
+# so these targets can't be scraped. Disable them to avoid permanently-down targets.
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeProxy:
+  enabled: false
+
 # Prometheus configuration
 prometheus:
   prometheusSpec:
@@ -35,15 +46,15 @@ grafana:
   # Ingress configuration
   ingress:
     enabled: true
-    ingressClassName: traefik
+    ingressClassName: traefik-traefik
     annotations:
       cert-manager.io/cluster-issuer: letsencrypt-prod
     hosts:
-      - grafana.mercury-prod.kubecraftlabs.com
+      - grafana-mercury-prod.jameshomelab.org
     tls:
       - secretName: grafana-tls
         hosts:
-          - grafana.mercury-prod.kubecraftlabs.com
+          - grafana-mercury-prod.jameshomelab.org
 
   # Mount CSI secrets volume to trigger secret sync
   extraSecretMounts:

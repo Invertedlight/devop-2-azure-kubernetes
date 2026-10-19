@@ -36,7 +36,7 @@ resource "azurerm_key_vault_secret" "blob_sas" {
   }
 }
 
-# Telegram credentials (dummy values for demo)
+# Telegram credentials: bot token is a placeholder, set the real one in Key Vault (value changes are ignored)
 # Comment these out and create real secrets manually if using Telegram
 resource "azurerm_key_vault_secret" "telegram_bot_token" {
   name         = "${var.customer_name}-telegram-bot-token"
@@ -50,7 +50,7 @@ resource "azurerm_key_vault_secret" "telegram_bot_token" {
 
 resource "azurerm_key_vault_secret" "telegram_chat_id" {
   name         = "${var.customer_name}-telegram-chat-id"
-  value        = "000000000"
+  value        = var.telegram_chat_id
   key_vault_id = var.key_vault_id
 
   lifecycle {

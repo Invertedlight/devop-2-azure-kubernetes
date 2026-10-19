@@ -11,7 +11,7 @@ output "namespace" {
 }
 
 output "n8n_url" {
-  value       = "https://${var.customer_name}.${var.domain}"
+  value       = "https://${local.hostname}"
   description = "n8n instance URL"
 }
 

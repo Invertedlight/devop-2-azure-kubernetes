@@ -1,0 +1,15 @@
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: julius-objectstore
+spec:
+  configuration:
+    destinationPath: "https://mercurybackupsjrich.blob.core.windows.net/julius"
+    azureCredentials:
+      storageAccount:
+        name: julius-backup-creds
+        key: storage-account-name
+      storageSasToken:
+        name: julius-backup-creds
+        key: julius-blob-sas
+  retentionPolicy: "14d"
