@@ -20,6 +20,11 @@ output "storage_account_name" {
   description = "Storage account for CNPG backups"
 }
 
+output "customer1_backup_path" {
+  value       = "${azurerm_storage_account.cnpg_backups.primary_blob_endpoint}customer1"
+  description = "CNPG backup destination path for customer1"
+}
+
 ## Grafana Outputs
 
 output "grafana_admin_password" {
