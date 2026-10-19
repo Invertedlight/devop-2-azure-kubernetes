@@ -1,5 +1,13 @@
 # Phase 8: Production-Ready n8n Deployment
 
+> **James's setup (Invertedlight / jameshomelab.org)**
+>
+> - Phase 8 has no Terraform of its own: it runs on the Phase 7 cluster (`phase-7-aks-hardening/`, subscription/AAD group/westus2/D2s_v6/1.36.3, Key Vault `kv-mercury-stg-${suffix}`, storage `mercurybackupsjrich`). No destroy/re-create is needed between Phase 7 and Phase 8.
+> - `gitops/` here = Phase 7 gitops (already adapted to James's values) + the Phase 8 hardening changes below. Flux reads `ssh://git@github.com/Invertedlight/mercury-gitops` (branch `main`); the Phase 8 changes are prepared on the `phase-8-production` branch there.
+> - Postgres is CNPG in-cluster (not Azure Flexible Server), so the Phase 3 Bitnami workaround is not needed here.
+> - TODO after each `terraform apply` of Phase 7: update `userAssignedIdentityID` and `keyvaultName` in `apps/base/customer1/secrets.yaml` and the identity patch in `apps/staging/customer1/kustomization.yaml` from `terraform output aks_keyvault_secrets_provider_client_id` / `key_vault_name`.
+> - Original upstream copy: `.phase-8-orig-20261019/`.
+
 This phase hardens the n8n deployment for production use by implementing Pod Security Standards (PSS), resource management, health checks, and Cilium network policies.
 
 **References:**
