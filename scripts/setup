@@ -1,6 +1,6 @@
 #!/bin/bash
 
-/usr/local/bin/mise trust /workspaces/$DEVPOD_WORKSPACE_ID/mise.toml && /usr/local/bin/mise install
+/usr/local/bin/mise trust /workspaces/$DEVPOD_WORKSPACE_ID/mise.toml && /usr/local/bin/mise install && /usr/local/bin/mise reshim
 
 curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
@@ -17,14 +17,9 @@ if [ -f "$KEY_DIR/mercury" ]; then
   ln -sf "$KEY_DIR/mercury.pub" "$HOME/.ssh/mercury.pub"
 fi
 
-# Dotfiles and zsh login shell. The home folder starts fresh whenever the pod
-# is recreated, so re-apply James's chezmoi dotfiles and set zsh as the shell.
-if command -v chezmoi >/dev/null 2>&1 && [ ! -d "$HOME/.local/share/chezmoi/.git" ]; then
-  if [ -e "$HOME/.local/share/chezmoi" ]; then
-    mv "$HOME/.local/share/chezmoi" "$HOME/.local/share/chezmoi.old-$(date +%Y%m%d%H%M%S)"
-  fi
-  chezmoi init --apply https://github.com/Invertedlight/dotfiles.git
-fi
+# Dotfiles are applied by DevPod itself (provider option DOTFILES_URL =
+# Invertedlight/dotfiles), so they are not bootstrapped here a second time.
+# Set zsh as the login shell.
 if [ -x /usr/bin/zsh ] && ! grep -q "^$(id -un):.*:/usr/bin/zsh$" /etc/passwd; then
   sudo chsh -s /usr/bin/zsh "$(id -un)"
 fi
