@@ -1,4 +1,5 @@
 [tools]
+# Project tooling
 chezmoi = "latest"
 flux2 = "latest"
 gh = "latest"
@@ -8,7 +9,28 @@ kubectl = "latest"
 kubectx = "latest"
 azure-kubelogin = "0.2.21"
 kubens = "latest"
+kustomize = "latest"
 neovim = "latest"
 python = "latest"
 terraform = "latest"
 usage = { version = "7.0.1", workflow = "publish-cli.yml" }
+
+# Merged 2026-10-23 from ~/.config/mise/config.toml (chezmoi dotfiles)
+azure-cli = "latest"
+uv = "latest"
+node = "latest"
+sops = "latest"
+age = "latest"
+direnv = "latest"
+"ubi:cloudnative-pg/cloudnative-pg" = { version = "1.30.1", exe = "kubectl-cnpg" }
+
+# Shell and terminal tools
+bat = "latest"
+starship = "latest"
+lsd = "latest"
+fzf = "latest"
+fd = "latest"
+lazygit = "latest"
+ripgrep = "latest"
+tmux = "latest"
+"github:wezterm/wezterm" = { version = "latest", asset_pattern = "wezterm-*.Ubuntu22.04.tar.xz", bin_path = "wezterm/usr/bin", os = ["linux"] }
